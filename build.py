@@ -627,17 +627,17 @@ def build_action_fun(page):
 
 def save_file(webfiles, cgi_source, cgi_header):
     for page in webfiles.keys():
-        f = open('output/' + page+'.htm', 'w')
+        f = open(path_dir + '/' + page+'.htm', 'w')
         f.write(webfiles[page]['html'])
         f.close()
         #print(page)
         #print(webfiles[page]['html'])
     for page in cgi_source.keys():
-        f = open('output/lca_' + page + '.c', 'w')
+        f = open(path_dir + '/lca_' + page + '.c', 'w')
         f.write(build_action_fun(page))
         f.write(cgi_source[page])
         f.close
-        f = open('output/lca_' + page + '.h', 'w')
+        f = open(path_dir + '/lca_' + page + '.h', 'w')
         f.write(cgi_header[page])
         f.close()
 
