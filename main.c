@@ -13,13 +13,18 @@
 
 #include "func.h"
 
-#include "oam/ftl_oam_id.h"
+//#include "oam/ftl_oam_id.h"
+#include "sname_def.h"
 
 int main(void) {
 
+#if 0
     int i=0;    
     FTL_OAM_INC_VAL(i, 2);
     printf("FTL_OAM_INC_VAL=%d\n", i);
+#endif
+
+    printf("sname_def = %s\n", CM_SNAME_RootDataModelVersion);
 
 	func();
 

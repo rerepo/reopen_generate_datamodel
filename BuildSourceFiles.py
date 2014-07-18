@@ -7,7 +7,7 @@ if __name__=='__main__':
 
     c = Cml()
     toolversion = '1.0.2'
-    opts, args = getopt.getopt(sys.argv[1:], 'f:t:p:')
+    opts, args = getopt.getopt(sys.argv[1:], 'f:t:p:s:')
     for op, value in opts:
         if op == '-f':
             raw_file = value
@@ -15,6 +15,8 @@ if __name__=='__main__':
             template_dir = value
         if op == '-p':
             path_dir = value
+        if op == '-s':
+            sname_path_dir = value
     c.load_file(raw_file)
 
     info = c.getElementsByUri('info')
@@ -108,7 +110,7 @@ if __name__=='__main__':
 
     # sname_def_dm.h
     res = build_sname_def(c.getElementsByUri('Device'), 'Device')
-    output = open(path_dir + '/sname_def_dm.h', 'w')
+    output = open(sname_path_dir + '/sname_def_dm.h', 'w')
     output.write(res)
     output.close()
 
