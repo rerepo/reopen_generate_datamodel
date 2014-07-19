@@ -41,7 +41,10 @@ if __name__=='__main__':
     if not os.path.exists(path_dir + '/oam'):
         print('Create dictionary: output/oam')
         os.makedirs(path_dir + '/oam')
-    
+    if not os.path.exists(sname_path_dir):
+        print('Create dictionary: sname_path_dir')
+        os.makedirs(sname_path_dir)
+
     print('read web page name')
     pages = []
 

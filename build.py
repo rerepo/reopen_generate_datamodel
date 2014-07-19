@@ -135,7 +135,7 @@ def build_description(node, uri):
 def find_web_page(node, dic):
     for child in node.childNodes:
         page = child.getAttribute('page')
-        print(child.getAttribute('Name') + ' ' + page)
+        #print(child.getAttribute('Name') + ' ' + page)
 
         if len(page) != 0 and  not page in dic:
             dic.append(page)

@@ -8,13 +8,17 @@ LOCAL_MODULE := liboam
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 intermediates := $(local-intermediates-dir)
 
-GEN := $(TARGET_OUT_HEADERS)/sname_def_dm.h
+#GEN := $(TARGET_OUT_HEADERS)/sname_def_dm.h
+GEN := $(intermediates)/generated
+
 GENSRC :=
 GENSRC += $(intermediates)/oam/ftl_oam_convert.c
 GENSRC += $(intermediates)/oam/ftl_oam_convert.h
-GENSRC += $(intermediates)/oam/oam/ftl_oam_id.h
+GENSRC += $(intermediates)/oam/ftl_oam_id.h
 GENSRC += $(intermediates)/oam/ftl_oam_init.c
 GENSRC += $(intermediates)/oam/ftl_oam_init.h
+
+GENSRC += $(TARGET_OUT_HEADERS)/sname_def_dm.h
 
 #LOCAL_EXPORT_C_INCLUDE_DIRS := $(intermediates)/oam
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
@@ -27,23 +31,26 @@ $(GEN): PRIVATE_INTERMEDIATES_DIR := $(intermediates)
 $(GEN): PRIVATE_CUSTOM_TOOL = python3 $(PRIVATE_PATH)/BuildSourceFiles.py -f $< -t $(PRIVATE_PATH)/template -p $(PRIVATE_INTERMEDIATES_DIR) -s $(TARGET_OUT_HEADERS)
 $(GEN): $(LOCAL_PATH)/Sercomm_STANDALONE_TDD_B_DataModel_RAW.xml
 	$(transform-generated-source)
-#	touch $@
+	touch $@
 # NOTE: have to touch in the end, because wait to mkdir
 
 # TODO: multi target expend for order
-#$(GENSRC): $(GEN)
-#	@echo "GENSRC: $@ <== ($<)"
+$(GENSRC): $(GEN)
+	@echo "GENSRC: $@ <== ($<)"
 # NOTE: always triger or no triger, it is no use
 
-LOCAL_GENERATED_SOURCES += $(GEN)
+LOCAL_GENERATED_SOURCES += $(GENSRC)
 
 #LOCAL_SRC_FILES := $(GENSRC)
 
 # for sname_def.h
 LOCAL_C_INCLUDES += $(LOCAL_PATH)
 # for sname_def_dm.h
-LOCAL_C_INCLUDES += $(intermediates)
-#LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)
+#LOCAL_C_INCLUDES += $(intermediates)
+
+LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)
+
+LOCAL_CFLAGS := -Wno-sign-compare
 
 include $(BUILD_STATIC_LIBRARY)
 
