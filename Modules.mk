@@ -30,9 +30,12 @@ $(GEN): PRIVATE_INTERMEDIATES_DIR := $(intermediates)
 
 $(GEN): PRIVATE_CUSTOM_TOOL = python3 $(PRIVATE_PATH)/BuildSourceFiles.py -f $< -t $(PRIVATE_PATH)/template -p $(PRIVATE_INTERMEDIATES_DIR) -s $(TARGET_OUT_HEADERS)
 $(GEN): $(LOCAL_PATH)/Sercomm_STANDALONE_TDD_B_DataModel_RAW.xml
-	$(transform-generated-source)
+	@mkdir -p $(dir $@)
 	touch $@
+	$(transform-generated-source)
+#	touch $@
 # NOTE: have to touch in the end, because wait to mkdir
+# NOTE: opt touch in the begin, for $(GENSRC): $(GEN) triger right time
 
 # TODO: multi target expend for order
 $(GENSRC): $(GEN)
