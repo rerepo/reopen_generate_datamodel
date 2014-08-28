@@ -51,7 +51,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)
 # for sname_def_dm.h
 #LOCAL_C_INCLUDES += $(intermediates)
 
-LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)
+#LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)
 
 LOCAL_CFLAGS := -Wno-sign-compare
 
@@ -75,7 +75,7 @@ LOCAL_SRC_FILES += func.c
 #LOCAL_C_INCLUDES += $(intermediates)
 
 # NOTE: override -isystem
-LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)
+#LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)
 # NOTE: in main.c #include "oam/ftl_oam_id.h"
 
 LOCAL_STATIC_LIBRARIES := liboam
