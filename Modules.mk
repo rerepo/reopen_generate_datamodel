@@ -61,7 +61,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
 #LOCAL_ADDITIONAL_DEPENDENCIES := $(intermediates)/oam/ftl_oam_id.h
-# FIXED: avoid func.c compile again
+# FIXED: avoid func.c compile again [FOR: DEPENDENCIES is for MODULE all files]
 
 LOCAL_ADDITIONAL_HEADERS := $(TARGET_OUT_HEADERS)/sname_def_dm.h
 
