@@ -691,7 +691,7 @@ def build_sname_def(node, uri):
 
     return res
 
-def build_femto_default_xml(node, product, customer):
+def build_femto_default_xml(node):
     xml_str = '<Element Name="' + node.getAttribute('Name') + '." ' 
     if node.getAttribute('Writeable') == '1':
         xml_str += 'Writable="1" '
@@ -702,7 +702,7 @@ def build_femto_default_xml(node, product, customer):
     xml_str += '>\n' 
     for child in node.childNodes:
         if child.getAttribute('Type') == 'object':
-            xml_str += build_femto_default_xml(child, product, customer)
+            xml_str += build_femto_default_xml(child)
         else:
             xml_str += '<Element Name="' + child.getAttribute('Name') + '"'
             if child.getAttribute('Writeable') == '1':
@@ -715,10 +715,7 @@ def build_femto_default_xml(node, product, customer):
                 xml_str += ' notifyMode="' + child.getAttribute('NotifyMode') + '"'
             if not len(child.getAttribute('denyActive')) == 0:
                 xml_str += ' denyActive="' + child.getAttribute('denyActive') + '"'
-            if child.hasAttribute(customer + '_' + product + '_Value'):
-                child.setAttribute('Value', child.getAttribute(customer + '_' + product + '_Value'))
-            if child.hasAttribute(customer + '_' + product + '_Permissions'):
-                child.setAttribute('Permissions', child.getAttribute(customer + '_' + product + '_Permissions'))
+            child.setAttribute('Value', child.getAttribute('Value'))
             if str(child.getAttribute('Type')).lower().find('Int') >= 0:
                 xml_str += ' value="' + str(int(str(child.getAttribute('Value')))).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace("'", '&apos;').replace('"', '&quot;') +'" '
             else:

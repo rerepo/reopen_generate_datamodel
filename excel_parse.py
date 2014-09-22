@@ -50,7 +50,7 @@ class excel_reader:
             para[name] = ''
         return para
 
-    def read_line(self, table, line_number, content):
+    def read_line(self, table, line_number, content, pname, arr):
         para = {}
 
         for i in range(0, len(content)):
@@ -78,15 +78,17 @@ class excel_reader:
             del para['Sname']
 
         #parse_default
-        para = self.parse_default(para, 'Default')
-        para['Value'] = self.convert_value(para['Default'])
-        if (len(para['Sercomm_STANDALONE_TDD_B_Default']) != 0) and (para['Sercomm_STANDALONE_TDD_B_Default'] != para['Default']):
-            para = self.parse_default(para, 'Sercomm_STANDALONE_TDD_B_Default')
-            para['Sercomm_STANDALONE_TDD_B_Value'] = self.convert_value(para['Sercomm_STANDALONE_TDD_B_Default'])
+        if (len(para[pname + '_Default']) != 0) and (para[pname + '_Default'] != para['Default']):
+            para = self.parse_default(para, pname + '_Default')
+            para['Value'] = self.convert_value(para[pname + '_Default'])
+        else:
+            para = self.parse_default(para, 'Default')
+            para['Value'] = self.convert_value(para['Default'])
+
 
         #parse_permission
-        if (len(para['Sercomm_STANDALONE_TDD_B_Permissions']) == 0):
-            del para['Sercomm_STANDALONE_TDD_B_Permissions']
+        if (len(para[pname + '_Permissions']) != 0):
+            para['Permissions'] = para[pname + '_Permissions']
 
 
         if para['denyActive'] == '1':
@@ -119,8 +121,11 @@ class excel_reader:
                 para['Value'] = '1'
             else: 
                 para['Value'] = '0'
+        for i in range(0, len(arr)):
+            del para[str(arr[i]) + '_Default']
+            del para[str(arr[i]) + '_Permissions']
+
         del para['Default']
-        del para['Sercomm_STANDALONE_TDD_B_Default']
         # GUI Page
         para['page'] = para['GUI Page'].replace('\n', '')
         del para['GUI Page']
@@ -132,7 +137,7 @@ class excel_reader:
             del para['syntax']
         return para
 
-    def parse_sheet_by_line(self, sheetname, fun, uri=''):
+    def parse_sheet_by_line(self, sheetname, fun, pname, arr, uri=''):
         #print('Parse sheet ' + sheetname)
         table = self.book.sheet_by_name(sheetname)
 
@@ -141,25 +146,38 @@ class excel_reader:
         content = table.row_values(0)
 
         for i in range(1, nrows - 1):
-            para = self.read_line(table, i, content)
+            para = self.read_line(table, i, content, pname, arr)
 
             if len(para['Support']) == 0:
                 continue
 
             if str(para['Type']) == 'Sheet Name':
-                self.parse_sheet_by_line(para['Name'], fun, uri)
+                self.parse_sheet_by_line(para['Name'], fun, pname, arr, uri)
                 continue
             else:
                 uri = fun(uri, para)
 
-    def parse_multi_object(self, sheetname, c):
+    def parse_multi_object(self, sheetname, c, pname):
         table = self.book.sheet_by_name(sheetname)
         i = 2
         while i < table.nrows - 1:
+            offset = 3
+            find = 0
+            end = 0
+            index = []
             uri = table.cell(i, 1).value
             if not uri.find('Device') == 0:
                 i += 1
                 continue
+            while offset < table.ncols - 1:
+                offset += 1
+                if((not table.cell(i, offset).value == '') and (table.cell(i, offset).value == pname)):
+                    find = 1
+                    break
+
+            if find == 0:
+                offset = 3
+
             arr = []
             j = i + 2
             name = table.cell(j, 1).value
@@ -170,26 +188,38 @@ class excel_reader:
                     break
                 name = table.cell(j, 1).value
             m = i + 1
-            n = 0;
-            index = table.cell(m, 3).value
+            n = 0
+            index = table.cell(m, offset).value
             if str(index).find('.') >= 0:
                 index=str(index)[0:str(index).find('.')]
             uri = uri.replace('.{i}.', '.')
             while len(index) > 0:
                 c.add_instance(uri, int(index))
                 for q in range(0, len(arr)):
-                    #print(uri + str(index) + '.' + arr[q] + ": " + str(table.cell(m + q + 1, 3 + n).value))
-                    c.set_value(uri + str(index) + '.' + arr[q], self.convert_value(str(table.cell(m + q + 1, 3 + n).value)))
+                    #print(uri + str(index) + '.' + arr[q] + ": " + str(table.cell(m + q + 1, offset + n).value))
+                    c.set_value(uri + str(index) + '.' + arr[q], self.convert_value(str(table.cell(m + q + 1, offset + n).value)))
                 n += 1
                 # avoid out of the range 
-                if n + 3 == table.ncols:
+                if ((n + offset == table.ncols) or (table.cell(i ,n+offset).value != '')):
                     break
-                index = table.cell(m, 3 + n).value
+                index = table.cell(m, offset + n).value
                 if str(index).find('.') >= 0:
                     index=str(index)[0:str(index).find('.')]
                 uri = uri.replace('.{i}.', '.')
             i = j
 
+    def parse_product_info(self, sheetname):
+        table = self.book.sheet_by_name(sheetname)
+        m = 4
+        i = 0
+        arr = []
+        while m < table.nrows - 1:
+            if table.cell(m, 2).value == '':
+                break
+            arr.append(str(table.cell(m, 2).value) + '_' + str(table.cell(m, 3).value))
+            i += 1
+            m += 1
+        return arr
 
             
 # Use for Unit Test

@@ -16,18 +16,24 @@ if __name__=='__main__':
     reader = excel_reader(excel_filename)
     version = reader.read_version() + '.0'
 
-    c = Cml()
+    arr = []
+    arr = reader.parse_product_info('Product Information')
+    for i in range(0, len(arr)):
+        real_name =  arr[i]
+        print('Bulid Project : ' + real_name)
+        c = Cml()
 
-    info = {}
-    info['filename'] = excel_filename
-    info['version'] = version
-    c.add_info(info)
+        info = {}
+        info['filename'] = excel_filename
+        info['version'] = version
+        c.add_info(info)
 
-    reader.parse_sheet_by_line('Device(TR-181-2)', c.add_child)
-    reader.parse_multi_object('Multi Object default', c)
+        reader.parse_sheet_by_line('Device(TR-181-2)', c.add_child, real_name, arr)
+        reader.parse_multi_object('Multi Object default', c, real_name)
+
+        res = c.write()
+        output = codecs.open(real_name + '_' + 'DataModel_RAW.xml', 'w', "utf-8")
+        output.write(res.decode("utf-8"))
+        output.close()
 
     print("Read " + excel_filename + " Successfully!")
-    res = c.write()
-    output = codecs.open('DataModel_RAW.xml', 'w', "utf-8")
-    output.write(res.decode("utf-8"))
-    output.close()

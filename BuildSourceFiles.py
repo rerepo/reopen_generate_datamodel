@@ -7,16 +7,12 @@ if __name__=='__main__':
 
     c = Cml()
     toolversion = '1.0.2'
-    opts, args = getopt.getopt(sys.argv[1:], 'f:t:p:c:')
+    opts, args = getopt.getopt(sys.argv[1:], 'f:t:')
     for op, value in opts:
         if op == '-f':
             raw_file = value
         if op == '-t':
             template_dir = value
-        if op == '-p':
-            product = value
-        if op == '-c':
-            customer = value
     c.load_file(raw_file)
 
     info = c.getElementsByUri('info')
@@ -118,7 +114,7 @@ if __name__=='__main__':
     print('Create: femto_default.xml')
     res = '<!-- data model version @{version}#-->\n'.replace('@{version}#', version)
     res += '<SERCOMM_CML>\n'
-    res += build_femto_default_xml(c.getElementsByUri('Device'), product, customer)
+    res += build_femto_default_xml(c.getElementsByUri('Device'))
     res += '</SERCOMM_CML>\n'
     output = open('femto_default.xml', 'w')
     output.write(res)
