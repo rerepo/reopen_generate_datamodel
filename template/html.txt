@@ -1,0 +1,50 @@
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META HTTP-EQUIV="Pragma" CONTENT="must-revalidate">
+<META HTTP-EQUIV="Cache-Control" CONTENT="must-revalidate">
+<title>FAPService_CellConfig</title>
+<script language="JavaScript" src="func.js"></script>
+<script language="JavaScript" src="message.js"></script>
+<script language="JavaScript" src="common.js"></script>
+<script language="JavaScript" src="mdata.js"></script>
+<script language="JavaScript" src="app.js"></script>
+<script language="JavaScript" src="description.js"></script>
+<script language="JavaScript">
+</script>
+<LINK REL="stylesheet" TYPE="text/css" HREF="ig_n.css">
+<style type="text/css">
+classes.num.all.fontFamily = "Courier";
+classes.num.all.fontSize = "10pt";
+</style>
+</head>
+<body leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" onLoad="form_init();">
+<script language="JavaScript">mdata_set("@{page}#")</script>
+<form name="@{page}#" action="setup.cgi" method="post">
+<TABLE width="800" align="center" cellpadding="1" cellspacing="1" class="topline">
+<col width="30%"><col width="70%">
+@{htm_content}#
+$end
+<tr class=r0 >
+        <td colspan="3" nowrap>&nbsp;</td>
+    </tr>
+    <tr class=r0 >
+        <td colspan="3" align="center" nowrap>
+        <input class="BUTTON" type="submit" name="save" value=" Save " onClick="return checkData()">
+        <input class="BUTTON" type="button" name="sync" value=" Sync " onClick="sync_femtolite_to_cmld()">
+        <input class="BUTTON" type="button" name="cancel" value=" Cancel " onClick="location.href='setup.cgi?next_file=@{page}#.htm'">
+        <input class="BUTTON" type="button" name="help" value=" Help " onClick="openhelp()"></td>
+    </tr>
+</table>
+	@{htm_hidden}#
+	<input type="hidden" name="object_value" value="">
+	<input type="hidden" name="object_uri" value="">
+	<input type="hidden" name="object_index" value="">
+	<input type="hidden" name="message" value="">
+    <input type="hidden" name="FAPService_list_val" value="">
+    <input type="hidden" name="next_file" value="@{page}#.htm">
+    <input type="hidden" name="this_file" value="@{page}#.htm">
+    <input type="hidden" name="todo" value="save">
+    </form>
+</body>
+</html>
