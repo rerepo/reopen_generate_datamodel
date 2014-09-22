@@ -699,6 +699,8 @@ def build_femto_default_xml(node):
     xml_str += 'DataType="object"'
     if len(str(node.getAttribute('Permissions')).strip()) > 0:
         xml_str += ' Permissions="' + node.getAttribute('Permissions') + '"'
+    if len(str(node.getAttribute('SaveType'))) > 0:
+        xml_str += ' SaveType="' + node.getAttribute('SaveType') + '"'
     xml_str += '>\n' 
     for child in node.childNodes:
         if child.getAttribute('Type') == 'object':
