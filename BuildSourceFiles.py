@@ -78,8 +78,11 @@ if __name__=='__main__':
         res = build_CGI_source(c.getElementsByUri('Device'), 'Device', page)
         template = template.replace('@{source_content}#', res)
         output = open('output/cgi/lca_' + page + '.c', 'w')
+        outlist = open('output/cgi/lca_list.mk', 'a')
+        outlist.write('OBJS += lca_' + page + '.o' + '\r\n')
         output.write(template)
         output.close()
+        outlist.close()
 
     for page in pages:
         print('Create: lca_' + page + '.h')
@@ -87,9 +90,12 @@ if __name__=='__main__':
         template = template.replace('@{page}#', page)
         res = build_CGI_head(c.getElementsByUri('Device'), 'Device', page)
         template = template.replace('@{head_content}#', res)
+        list_header = open('output/cgi/include/lca_header.h', 'a')
+        list_header.write('#include "lca_' + page + '.h"' + '\r\n')
         output = open('output/cgi/include/lca_' + page + '.h', 'w')
         output.write(template)
         output.close()
+        list_header.close()
 
 
     # build lca_fun_tab_dm.h
