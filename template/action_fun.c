@@ -4,6 +4,7 @@
  * DataModel File: @{filename}#
  */
 #include <string.h>
+#include <sys/wait.h>
 #include "parser.h"
 #include "cgi_main.h"
 #include "lca_fun_tab.h"
@@ -18,6 +19,7 @@ int action_@{page}#(LIST *head, int fileFunBase)
 {
     char *thisfile, *nextfile, *action;
     char eMsg[512] = {0};
+    int ret = 0;
 #ifdef _SAMPLE_DEBUG_
     mylog("%s\n", __FUNCTION__);
 #endif
@@ -40,7 +42,15 @@ int action_@{page}#(LIST *head, int fileFunBase)
     }
     else if(action && strcmp(action, "sync_config_femto_to_cmld") == 0)
     {
-        system("/ftl/bin/femto_cli sync_femto");
+        ret = system("/ftl/bin/femto_cli sync_femto");
+        if(WIFEXITED(ret))
+        {
+            strcpy(eMsg, "Warning:Sync config from femtolite to cmld fail");
+            if(strlen(eMsg)){
+                alert(eMsg, nextfile);
+                return 0;
+            }
+        }
         sleep(2);
     }
     else if(action && strcmp(action, "addInstance") == 0)
