@@ -56,14 +56,17 @@ int action_@{page}#(LIST *head, int fileFunBase)
     else if(action && strcmp(action, "addInstance") == 0)
     {
         action_add_instance(head);
+        ftl_commit();
     }
     else if(action && strcmp(action, "delInstance") == 0)
     {
         action_del_instance(head);
+        ftl_commit();
     }
     else if(action && strcmp(action, "modifyInstance") == 0)
     {
         action_modify_instance(head);
+        ftl_commit();
     }
     html_parser(nextfile, head, cgi_fun_tab);
     return 0;

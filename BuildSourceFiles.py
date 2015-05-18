@@ -1,3 +1,64 @@
+def build_stack_interface(project):
+    # OAM: ftl_oam_id.h
+    print('Create-' + project + ':' + 'ftl_oam_id.h')
+    template = open(template_dir + '/ftl_oam_id.h', 'r').read()
+    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
+    res = build_oam_para_struct(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService', '    ', 1)
+    template = template.replace('@{FAPService_OAM_Struct}#', res)
+   
+    res = build_oam_struct_typedef(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService' )
+    template = template.replace('@{OAM_typedef}#', res)
+    res = build_oam_macro(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
+    template = template.replace('@{OAM_Macro}#', res)
+    output = open('output/oam-' + project + '/ftl_oam_id.h', 'w')
+    output.write(template)
+    output.close()
+
+    # OAM: ftl_oam_convert.h
+    print('Create-' + project + ':' + 'ftl_oam_convert.h')
+    template = open(template_dir + '/ftl_oam_convert.h', 'r').read()
+    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
+    res = build_oam_get_fun_head(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
+    template = template.replace('@{oam_get_fun_head}#', res)
+    output = open('output/oam-' + project + '/ftl_oam_convert.h', 'w')
+    output.write(template)
+    output.close()
+    # Clear OAM fun_name_arr for create ftl_oam_convert.c
+    del fun_name_arr[project][:]
+
+    # OAM: ftl_oam_convert.c
+    print('Create-' + project + ':' + 'ftl_oam_convert.c')
+    template = open(template_dir +  '/ftl_oam_convert.c', 'r').read()
+    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
+    res = build_oam_convert_table(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
+    template = template.replace('@{Oam_convert_table}#', res)
+    res = build_oam_get_fun(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService' )
+    template = template.replace('@{oam_get_fun}#', res) 
+    output = open('output/oam-' + project + '/ftl_oam_convert.c', 'w')
+    output.write(template)
+    output.close()
+
+    # OAM: ftl_oam_init.c
+    print('Create-' + project + ':' + 'ftl_oam_init.c')
+    template = open(template_dir + '/ftl_oam_init.c', 'r').read().replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
+    res = build_oam_dm_init(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
+    template = template.replace('@{ftl_oam_dm_init}#', res)
+   
+    res = build_oam_cm_update_req_handle(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
+    template = template.replace('@{ftl_oam_cm_update_req_handler}#',res)
+    output = open('output/oam-' + project + '/ftl_oam_init.c', 'w')
+    output.write(template)
+
+    output.close()
+
+    # OAM: ftl_oam_init.h
+    print('Create-' + project + ':' + 'ftl_oam_init.h')
+    template = open(template_dir + '/ftl_oam_init.h', 'r').read()
+    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
+    output = open('output/oam-' + project + '/ftl_oam_init.h', 'w')
+    output.write(template)
+    output.close()
+
 if __name__=='__main__':
     from cml import Cml
     from build import *
@@ -34,9 +95,12 @@ if __name__=='__main__':
     if not os.path.exists(current_path + '/output/cgi/include'):
         print('Create dictionary: output/cgi/include')
         os.makedirs(current_path + '/output/cgi/include')
-    if not os.path.exists(current_path + '/output/oam'):
-        print('Create dictionary: output/oam')
-        os.makedirs(current_path + '/output/oam')
+    if not os.path.exists(current_path + '/output/oam-lte'):
+        print('Create dictionary: output/oam-lte')
+        os.makedirs(current_path + '/output/oam-lte')
+    if not os.path.exists(current_path + '/output/oam-tds'):
+        print('Create dictionary: output/oam-tds')
+        os.makedirs(current_path + '/output/oam-tds')
     
     print('read web page name')
     pages = []
@@ -119,63 +183,5 @@ if __name__=='__main__':
     output = open('femto_default.xml', 'w')
     output.write(res)
     output.close()
-
-    # OAM: ftl_oam_id.h
-    print('Create: ftl_oam_id.h')
-    template = open(template_dir + '/ftl_oam_id.h', 'r').read()
-    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
-    res = build_oam_para_struct(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService', '    ', 1)
-    template = template.replace('@{FAPService_OAM_Struct}#', res)
-   
-    res = build_oam_struct_typedef(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService' )
-    template = template.replace('@{OAM_typedef}#', res)
-    res = build_oam_macro(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
-    template = template.replace('@{OAM_Macro}#', res)
-    output = open('output/oam/ftl_oam_id.h', 'w')
-    output.write(template)
-    output.close()
-
-    # OAM: ftl_oam_convert.h
-    print('Create: ftl_oam_convert.h')
-    template = open(template_dir + '/ftl_oam_convert.h', 'r').read()
-    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
-    res = build_oam_get_fun_head(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
-    template = template.replace('@{oam_get_fun_head}#', res)
-    output = open('output/oam/ftl_oam_convert.h', 'w')
-    output.write(template)
-    output.close()
-    # Clear OAM fun_name_arr for create ftl_oam_convert.c
-    del fun_name_arr[:]
-
-    # OAM: ftl_oam_convert.c
-    print('Create: ftl_oam_convert.c')
-    template = open(template_dir +  '/ftl_oam_convert.c', 'r').read()
-    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
-    res = build_oam_convert_table(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
-    template = template.replace('@{Oam_convert_table}#', res)
-    res = build_oam_get_fun(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService' )
-    template = template.replace('@{oam_get_fun}#', res) 
-    output = open('output/oam/ftl_oam_convert.c', 'w')
-    output.write(template)
-    output.close()
-
-    # OAM: ftl_oam_init.c
-    print('Create: ftl_oam_init.c')
-    template = open(template_dir + '/ftl_oam_init.c', 'r').read().replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
-    res = build_oam_dm_init(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
-    template = template.replace('@{ftl_oam_dm_init}#', res)
-   
-    res = build_oam_cm_update_req_handle(c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
-    template = template.replace('@{ftl_oam_cm_update_req_handler}#',res)
-    output = open('output/oam/ftl_oam_init.c', 'w')
-    output.write(template)
-
-    output.close()
-
-    # OAM: ftl_oam_init.h
-    print('Create: ftl_oam_init.h')
-    template = open(template_dir + '/ftl_oam_init.h', 'r').read()
-    template = template.replace('@{version}#', version).replace('@{filename}#', excel_filename).replace('@{toolversion}#', toolversion)
-    output = open('output/oam/ftl_oam_init.h', 'w')
-    output.write(template)
-    output.close()
+    build_stack_interface('tds')
+    build_stack_interface('lte')

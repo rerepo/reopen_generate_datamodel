@@ -20,7 +20,7 @@ if __name__=='__main__':
     arr = reader.parse_product_info('Product Information')
     for i in range(0, len(arr)):
         real_name =  arr[i]
-        print('Bulid Project : ' + real_name)
+        print('Build Project : ' + real_name)
         c = Cml()
 
         info = {}

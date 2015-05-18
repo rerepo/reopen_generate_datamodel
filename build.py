@@ -745,17 +745,22 @@ def checkEumeData(enumData):
 # File: ftl_oam_convert.c 
 # funtion: get function
 # ftl_oam_get(void name, ...)
-fun_name_arr = []
-def build_oam_get_fun(node, uri):
+fun_name_arr = {'tds':[], 'lte':[]}
+def build_oam_get_fun(project, node, uri):
     global fun_name_arr
     res = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes:
         name = child.getAttribute('Name')
         paraType = child.getAttribute('Type').lower()
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         if child.getAttribute('Type') == 'object':
-            res += build_oam_get_fun(child, uri + '.' + name)
+            res += build_oam_get_fun(project, child, uri + '.' + name)
             if name == '0':
                 return res
         else:
@@ -768,7 +773,7 @@ def build_oam_get_fun(node, uri):
                 fun_name = '_'.join(arr[-2:])
 
             # check fun_name is repetition or not    
-            Is_repetition = oam_find(fun_name_arr, fun_name)
+            Is_repetition = oam_find(fun_name_arr[project], fun_name)
             if Is_repetition == True:
                 if arr[-2] == '0':
                     fun_name = '_'.join(arr[-4:])
@@ -834,17 +839,22 @@ def build_oam_get_fun(node, uri):
     return res
 
 # this Funtion will generator code Get Fun Head file and emue data
-def build_oam_get_fun_head(node, uri, dic=[]):
+def build_oam_get_fun_head(project, node, uri, dic=[]):
     global fun_name_arr
     res = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes:
         name = child.getAttribute('Name')
         paraType = child.getAttribute('Type').lower()
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         if child.getAttribute('Type') == 'object':
 
-            res += build_oam_get_fun_head(child, uri + '.' + child.getAttribute('Name'), dic)
+            res += build_oam_get_fun_head(project, child, uri + '.' + child.getAttribute('Name'), dic)
             if name == '0':
                 break
         else:
@@ -855,7 +865,7 @@ def build_oam_get_fun_head(node, uri, dic=[]):
             else:
                 fun_name = '_'.join(arr[-2:])
             # check fun_name is repetition or not    
-            Is_repetition = oam_find(fun_name_arr, fun_name)
+            Is_repetition = oam_find(fun_name_arr[project], fun_name)
             if Is_repetition == True:
                 if arr[-2] == '0':
                     fun_name = '_'.join(arr[-4:])
@@ -891,14 +901,19 @@ def build_oam_get_fun_head(node, uri, dic=[]):
                 
     return res
 
-def build_oam_convert_table(node, uri):
+def build_oam_convert_table(project, node, uri):
     res = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes:
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         name = child.getAttribute('Name')
         if child.getAttribute('Type') == 'object':
-            res += build_oam_convert_table(child, uri + '.' + name)
+            res += build_oam_convert_table(project, child, uri + '.' + name)
             if name == '0':
                 break
         else:
@@ -932,7 +947,7 @@ def add_indent(indent, num):
 def computeMaxNum(node, name):
     for child in node.childNodes:
         childname = child.getAttribute('Name')
-        if childname.find(name) >= 0 and childname.find('Max') > 0:
+        if childname.find(name) >= 0 and childname.find('Max') > 0 and childname.find('Entries') > 0:
             value = child.getAttribute('Value')
             if len(value) is None:
                 return '32'
@@ -940,10 +955,15 @@ def computeMaxNum(node, name):
                 return value
     return '32'
 
-def build_oam_para_struct(node, uri, indent, num=0):
+def build_oam_para_struct(project, node, uri, indent, num=0):
     res = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes:
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         name = child.getAttribute('Name')
         paraType = child.getAttribute('Type')
@@ -953,7 +973,7 @@ def build_oam_para_struct(node, uri, indent, num=0):
             # other instance list like '1', '2' ... , will be ignored
 
             if name == '0':
-                res += build_oam_para_struct(child, uri + '.' + name, indent, num)
+                res += build_oam_para_struct(project, child, uri + '.' + name, indent, num)
                 break
 
             res += add_indent(indent, num) + 'struct '
@@ -963,7 +983,7 @@ def build_oam_para_struct(node, uri, indent, num=0):
             res += ' {\n'
          
 
-            res += build_oam_para_struct(child, uri + '.' + name, indent, num + 1)
+            res += build_oam_para_struct(project, child, uri + '.' + name, indent, num + 1)
             res += add_indent(indent, num)
             if child.childNodes[0].getAttribute('Name') == '0':
                 res += '} ' + name + '[' + \
@@ -987,25 +1007,30 @@ def build_oam_para_struct(node, uri, indent, num=0):
             res += 'char            ' + name + '[256];\n'
     return res
 
-def build_oam_struct_typedef(node, uri):
+def build_oam_struct_typedef(project, node, uri):
     res = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes:
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         name = child.getAttribute('Name')
         #if child.getAttribute('Name') == '0' :
         #    break
         if child.getAttribute('Type') == 'object':
             if name == '0':
-                res += build_oam_struct_typedef(child, uri + '.' + name)
+                res += build_oam_struct_typedef(project, child, uri + '.' + name)
                 return res
             oamMacro = get_oam_macro_by_uri(uri + '.' + name)
-            space_len = 81 - len(oamMacro)
-            res += 'typedef struct ' + oamMacro 
+            space_len = 150 - len(oamMacro)
+            res += 'typedef struct ' + oamMacro + ' '
             for i in range(1, space_len):
                 res += ' '
             res +=  oamMacro + '_t;\n'
-            res += build_oam_struct_typedef(child, uri + '.' + name).replace('(x)', '');
+            res += build_oam_struct_typedef(project, child, uri + '.' + name).replace('(x)', '');
         else:
             '''
             oamMacro = get_oam_macro_by_uri(uri + '.' + name)
@@ -1017,21 +1042,26 @@ def build_oam_struct_typedef(node, uri):
             '''
     return res
 
-def build_oam_macro(node, uri):
+def build_oam_macro(project, node, uri):
     key = ['x', 'y', 'z']
     res  = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes: 
         name = child.getAttribute('Name')
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
 
         if len(child.childNodes) > 0 and child.childNodes[0].getAttribute('Name') == '0':
-            res += build_oam_macro(child, uri + '.' + name)
+            res += build_oam_macro(project, child, uri + '.' + name)
             continue
 
 
         macro = get_oam_macro_by_uri(uri + '.' + name)
-        res += '#define ' + macro
+        res += '#define ' + macro + ' '
         space_len = 150 - len(macro)
         for i in range(1, space_len):
             res += ' '
@@ -1053,10 +1083,10 @@ def build_oam_macro(node, uri):
 
         if child.getAttribute('Type') == 'object':
             if name == '0':
-                res += build_oam_macro(child, uri + '.' + name)
+                res += build_oam_macro(project, child, uri + '.' + name)
                 return res
             else:
-                res += build_oam_macro(child, uri + '.' + name)
+                res += build_oam_macro(project, child, uri + '.' + name)
         
     return res
 
@@ -1097,12 +1127,17 @@ def getMaxNumNodeOamMacro(node, uri, name):
     return ''
 
 # ftl_oam_dm_init(void)
-def build_oam_dm_init(node, uri, depth = 0):
+def build_oam_dm_init(project, node, uri, depth = 0):
     inner_loop = chr(ord('i') + depth)
     res = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes:
 
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         paraType = child.getAttribute('Type').lower()
         name = child.getAttribute('Name')
@@ -1123,16 +1158,16 @@ def build_oam_dm_init(node, uri, depth = 0):
                 res += '    {\n'
                 res += '        for(' + inner_loop + ' = 1; ' + inner_loop + ' <= ' + EntryNumMacro + '; ' + inner_loop + '++)\n'
                 res += '        {\n'
-                res += build_oam_dm_init(child, uri + '.' + name, depth + 1)
+                res += build_oam_dm_init(project, child, uri + '.' + name, depth + 1)
 
                 res += '        }\n    }\n\n'
                 continue
 
             # Only need template node, ignore instance node of multi object
             if name == '0':
-                res += build_oam_dm_init(child, uri + '.' + name, depth)
+                res += build_oam_dm_init(project, child, uri + '.' + name, depth)
                 break
-            res += build_oam_dm_init(child, uri + '.' + name, depth)
+            res += build_oam_dm_init(project, child, uri + '.' + name, depth)
             # parse next child node
             continue
 
@@ -1176,11 +1211,16 @@ def getNumberEntryNodeSnameMacro(node, uri, name):
 
 
 # ftl_oam_cm_update_req_handler(void)
-def build_oam_cm_update_req_handle(node, uri, depth = 0):
+def build_oam_cm_update_req_handle(project, node, uri, depth = 0):
     inner_loop = chr(ord('i') + depth)
     res = ''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
     for child in node.childNodes:
-        if not child.getAttribute('Support') == 'F':
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         paraType = child.getAttribute('Type').lower()
         name = child.getAttribute('Name')
@@ -1220,13 +1260,25 @@ def build_oam_cm_update_req_handle(node, uri, depth = 0):
                 res += '    if(' + EntryNumMacro + ' > atoi(buf))\n'
                 res += '    {\n'
                 res += '        for(j = atoi(buf)+1; j <= ' + EntryNumMacro + '; j++)\n'
-                res += '            ftl_addObj(' + macroExpand(get_macro_by_uri(path)) + '_Table, j);\n'
+                res += '        {\n'
+                if EntrySnameMacro.find('_i_') >= 0:
+                    res += '            sprintf(sname, ' + macroExpand(get_macro_by_uri(path)) + '_Table, i);\n'
+                    res += '            ftl_addObj(sname , j);\n'
+                else:
+                    res += '            ftl_addObj(' + macroExpand(get_macro_by_uri(path)) + '_Table, j);\n'
+                res += '        }\n'
                 res += '    }\n'
 
                 res += '    else if(' + EntryNumMacro + ' < atoi(buf))\n'
                 res += '    {\n'
                 res += '        for(j = ' + EntryNumMacro + '+1; j <= atoi(buf); j++)\n'
-                res += '            ftl_delObj(' + macroExpand(get_macro_by_uri(path)) + '_Table, j);\n'
+                res += '        {\n'
+                if EntrySnameMacro.find('_i_') >= 0:
+                    res += '            sprintf(sname, ' + macroExpand(get_macro_by_uri(path)) + '_Table, i);\n'
+                    res += '            ftl_delObj(sname , j);\n'
+                else:
+                    res += '            ftl_delObj(' + macroExpand(get_macro_by_uri(path)) + '_Table, j);\n'
+                res += '        }\n'
                 res += '    }\n'
                 # Set NumberOfEntries
                 res += '    sprintf(value, "%d", ' + EntryNumMacro + ');\n'
@@ -1235,7 +1287,6 @@ def build_oam_cm_update_req_handle(node, uri, depth = 0):
                     res += '    ftl_setValue(sname, value);\n'
                 else:
                     res += '    ftl_setValue(' + EntrySnameMacro + ', value);\n'
-                res += '    ftl_setValue(' + macroExpand(getNumberEntryNodeSnameMacro(node, uri, name)) + ', value);\n'
 
                 #!TODO we need copy data by instance id , like '2,3,4' we should support
 
@@ -1244,16 +1295,16 @@ def build_oam_cm_update_req_handle(node, uri, depth = 0):
                 res += '    {\n'
                 res += '        for(' + inner_loop + ' = 1; ' + inner_loop + ' <= ' + EntryNumMacro + '; ' + inner_loop + '++)\n'
                 res += '        {\n'
-                res += build_oam_cm_update_req_handle(child, uri + '.' + name, depth+1)
+                res += build_oam_cm_update_req_handle(project, child, uri + '.' + name, depth+1)
 
                 res += '        }\n    }\n\n'
                 continue
 
             # Only need template node, ignore instance node of multi object
             if name == '0':
-                res += build_oam_cm_update_req_handle(child, uri + '.' + name, depth)
+                res += build_oam_cm_update_req_handle(project, child, uri + '.' + name, depth)
                 break
-            res += build_oam_cm_update_req_handle(child, uri + '.' + name, depth)
+            res += build_oam_cm_update_req_handle(project, child, uri + '.' + name, depth)
             # parse next child node
             continue
 
@@ -1297,7 +1348,7 @@ def build_oam_files(node, uri, oam):
 
             if not child.getAttribute('Support') == 'F':
                 continue
-            print(build_oam_get_fun(child, uri))
+            print(build_oam_get_fun(project, child, uri))
 
 
 def print_ori_xml_file(c):

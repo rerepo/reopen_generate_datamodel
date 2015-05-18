@@ -17,7 +17,7 @@
 #define NULL_POINTER_CHECK(...) \
     null_char_pointer_check(__VA_ARGS__, __VA_MAGIC__)
 
-#define FTL_OAM_CONVERT_TABLE_MAX (100)
+#define FTL_OAM_CONVERT_TABLE_MAX (200)
 #define OAM2PROTOCOL_TABLE_MAX (64)
 
 typedef struct
