@@ -15,23 +15,29 @@ class excel_reader:
                 version = table.col(1)[i].value
         return version
 
+    def get_cell_value(self, cell):
+        cell_value = cell.value
+        if cell.ctype in (2,3) and int(cell_value) == cell_value:
+            cell_value = int(cell_value)
+        return cell_value
+        
     def convert_value(self, ori, type_str):
         tmp = ori
         if len(tmp) == 0 :
             return tmp
-        if type_str.lower().find('int') >= 0 :
-            return str(int(float(tmp)))
         if type_str.lower().find('boolean') >= 0 :
             values = {
-                    'True': '1',
-                    'TRUE': '1',
-                    '1'   : '1',
-                    '0'   : '0'}
+                    'True' : '1',
+                    'TRUE' : '1',
+                    'FALSE': '0',
+                    'False': '0',
+                    '1'    : '1',
+                    '0'    : '0',}
             return values.get(tmp, '0')
-        if type_str.lower().find('string') >= 0 or type_str.lower().find('datetime') >= 0 :
+        if type_str.lower().find('string') >= 0 or type_str.lower().find('datetime') >= 0:
             if tmp.find('<Empty>') >= 0:
-                return '' 
-            return tmp
+                tmp = ''
+        return tmp
         """
         i = len(tmp) - 1
         if len(tmp) > 0 and str(tmp)[-1] == '.':
@@ -71,7 +77,7 @@ class excel_reader:
         para = {}
 
         for i in range(0, len(content)):
-            para[content[i]] = str(table.row(line_number)[i].value).strip()
+            para[content[i]] = str(self.get_cell_value(table.row(line_number)[i])).strip()
 
         # delete unused parameters
         #del para['Description']
@@ -218,7 +224,7 @@ class excel_reader:
                 for q in range(0, len(arr)):
                     #print(uri + str(index) + '.' + arr[q] + ": " + str(table.cell(m + q + 1, offset + n).value))
                     real_uri = uri + str(index) + '.' + arr[q]
-                    value = str(table.cell(m + q + 1, offset + n).value)
+                    value = str(self.get_cell_value(table.cell(m + q + 1, offset + n)))
                     c.set_value(real_uri, self.convert_value(value, c.get_attribute(real_uri, 'Type')))
                 n += 1
                 # avoid out of the range 
