@@ -1032,7 +1032,7 @@ def build_oam_macro(node, uri):
 
         macro = get_oam_macro_by_uri(uri + '.' + name)
         res += '#define ' + macro
-        space_len = 101 - len(macro)
+        space_len = 150 - len(macro)
         for i in range(1, space_len):
             res += ' '
 
@@ -1206,12 +1206,17 @@ def build_oam_cm_update_req_handle(node, uri, depth = 0):
                 if len(maxNum) == 0:
                     maxNum = '32'
                 EntryNumMacro = macroExpand(getNumberEntryNodeOamMacro(node, uri, name))
+                EntrySnameMacro = macroExpand(getNumberEntryNodeSnameMacro(node, uri, name))
 
                 # Before copy data to CML, we need check the instance number
                 # if the instance number is more , we need do ftl_addObj
                 # else do ftl_delObj
                 #
-                res += '    ftl_getNodeValue(' + macroExpand(getNumberEntryNodeSnameMacro(node, uri, name)) + ', buf);\n'
+                if EntrySnameMacro.find('_i_') >= 0:
+                    res += '    sprintf(sname,' + EntrySnameMacro + ', i);\n'
+                    res += '    ftl_getNodeValue(sname, buf);\n'
+                else:
+                    res += '    ftl_getNodeValue(' + EntrySnameMacro + ', buf);\n'
                 res += '    if(' + EntryNumMacro + ' > atoi(buf))\n'
                 res += '    {\n'
                 res += '        for(j = atoi(buf)+1; j <= ' + EntryNumMacro + '; j++)\n'
@@ -1225,6 +1230,11 @@ def build_oam_cm_update_req_handle(node, uri, depth = 0):
                 res += '    }\n'
                 # Set NumberOfEntries
                 res += '    sprintf(value, "%d", ' + EntryNumMacro + ');\n'
+                if EntrySnameMacro.find('_i_') >= 0:
+                    res += '    sprintf(sname,' + EntrySnameMacro + ', i);\n'
+                    res += '    ftl_setValue(sname, value);\n'
+                else:
+                    res += '    ftl_setValue(' + EntrySnameMacro + ', value);\n'
                 res += '    ftl_setValue(' + macroExpand(getNumberEntryNodeSnameMacro(node, uri, name)) + ', value);\n'
 
                 #!TODO we need copy data by instance id , like '2,3,4' we should support
