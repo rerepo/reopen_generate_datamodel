@@ -90,6 +90,8 @@ class excel_reader:
         if (len(para[pname + '_Permissions']) != 0):
             para['Permissions'] = para[pname + '_Permissions']
 
+        if (len(para[pname + '_Support']) != 0):
+            para['Support'] = para[pname + '_Support']
 
         if para['denyActive'] == '1':
             para['denyActive'] = 'True'
@@ -124,6 +126,7 @@ class excel_reader:
         for i in range(0, len(arr)):
             del para[str(arr[i]) + '_Default']
             del para[str(arr[i]) + '_Permissions']
+            del para[str(arr[i]) + '_Support']
 
         del para['Default']
         # GUI Page
