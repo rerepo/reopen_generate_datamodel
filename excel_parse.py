@@ -15,8 +15,24 @@ class excel_reader:
                 version = table.col(1)[i].value
         return version
 
-    def convert_value(self, ori):
+    def convert_value(self, ori, type_str):
         tmp = ori
+        if len(tmp) == 0 :
+            return tmp
+        if type_str.lower().find('int') >= 0 :
+            return str(int(float(tmp)))
+        if type_str.lower().find('boolean') >= 0 :
+            values = {
+                    'True': '1',
+                    'TRUE': '1',
+                    '1'   : '1',
+                    '0'   : '0'}
+            return values.get(tmp, '0')
+        if type_str.lower().find('string') >= 0 or type_str.lower().find('datetime') >= 0 :
+            if tmp.find('<Empty>') >= 0:
+                return '' 
+            return tmp
+        """
         i = len(tmp) - 1
         if len(tmp) > 0 and str(tmp)[-1] == '.':
             return tmp
@@ -35,6 +51,7 @@ class excel_reader:
         if tmp.find('<Empty>') >= 0:
             tmp = ''
         return tmp
+                    """
 
     def parse_default(self, para, name):
         if len(para[name]) != 0:
@@ -80,10 +97,10 @@ class excel_reader:
         #parse_default
         if (len(para[pname + '_Default']) != 0) and (para[pname + '_Default'] != para['Default']):
             para = self.parse_default(para, pname + '_Default')
-            para['Value'] = self.convert_value(para[pname + '_Default'])
+            para['Value'] = self.convert_value(para[pname + '_Default'], para['Type'])
         else:
             para = self.parse_default(para, 'Default')
-            para['Value'] = self.convert_value(para['Default'])
+            para['Value'] = self.convert_value(para['Default'], para['Type'])
 
 
         #parse_permission
@@ -114,7 +131,6 @@ class excel_reader:
         para['Value'] = tmp
         if tmp.find('<Empty>') >= 0:
             tmp = ''
-        '''
 
         if para['Type'] == 'boolean':
             if len(para['Value']) == 0:
@@ -123,6 +139,7 @@ class excel_reader:
                 para['Value'] = '1'
             else: 
                 para['Value'] = '0'
+        '''
         for i in range(0, len(arr)):
             del para[str(arr[i]) + '_Default']
             del para[str(arr[i]) + '_Permissions']
@@ -200,7 +217,9 @@ class excel_reader:
                 c.add_instance(uri, int(index))
                 for q in range(0, len(arr)):
                     #print(uri + str(index) + '.' + arr[q] + ": " + str(table.cell(m + q + 1, offset + n).value))
-                    c.set_value(uri + str(index) + '.' + arr[q], self.convert_value(str(table.cell(m + q + 1, offset + n).value)))
+                    real_uri = uri + str(index) + '.' + arr[q]
+                    value = str(table.cell(m + q + 1, offset + n).value)
+                    c.set_value(real_uri, self.convert_value(value, c.get_attribute(real_uri, 'Type')))
                 n += 1
                 # avoid out of the range 
                 if ((n + offset == table.ncols) or (table.cell(i ,n+offset).value != '')):

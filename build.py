@@ -1042,6 +1042,24 @@ def build_oam_struct_typedef(project, node, uri):
             '''
     return res
 
+def build_kpi_macro(project, node, uri):
+    value=''
+    res=''
+    for child in node.childNodes:
+        arr = (uri + '.' + child.getAttribute('Name')).split('.')
+        if child.getAttribute('Type') == 'object' and not child.getAttribute('Name') == '0':
+            res += build_kpi_macro(project, child, uri + '.' + child.getAttribute('Name'))
+        if child.getAttribute('Name') == 'X_SCM_Name' and not len(child.getAttribute('Value')) == 0:
+            value = child.getAttribute('Value')
+            macro = project.upper() + '_KPI_' + (value + ' ').upper().replace('.', '_')
+            sname = uri + '.' + 'Values'
+            res += '#define ' + macro + ' '
+            space_len = 150 - len(macro)
+            for i in range(1, space_len):
+                res += ' '
+            res += '"' + sname +'"\n'
+    return res
+
 def build_oam_macro(project, node, uri):
     key = ['x', 'y', 'z']
     res  = ''

@@ -9,6 +9,10 @@ def build_stack_interface(project):
     res = build_oam_struct_typedef(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService' )
     template = template.replace('@{OAM_typedef}#', res)
     res = build_oam_macro(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
+    if project == 'lte':
+        res += build_kpi_macro(project, c.getElementsByUri('Device.PeriodicStatistics.SampleSet.1.Parameter'), 'Device.PeriodicStatistics.SampleSet.1.Parameter')
+    else:
+        res += build_kpi_macro(project, c.getElementsByUri('Device.PeriodicStatistics.SampleSet.2.Parameter'), 'Device.PeriodicStatistics.SampleSet.2.Parameter')
     template = template.replace('@{OAM_Macro}#', res)
     output = open('output/oam-' + project + '/ftl_oam_id.h', 'w')
     output.write(template)
