@@ -11,6 +11,7 @@ def build_stack_interface(project):
     res = build_oam_macro(project, c.getElementsByUri('Device.Services.FAPService.1'), 'Device.Services.FAPService')
     if project == 'lte':
         res += build_kpi_macro(project, c.getElementsByUri('Device.PeriodicStatistics.SampleSet.1.Parameter'), 'Device.PeriodicStatistics.SampleSet.1.Parameter')
+        res += build_kpi_macro(project, c.getElementsByUri('Device.PeriodicStatistics.SampleSet.3.Parameter'), 'Device.PeriodicStatistics.SampleSet.3.Parameter')
     else:
         res += build_kpi_macro(project, c.getElementsByUri('Device.PeriodicStatistics.SampleSet.2.Parameter'), 'Device.PeriodicStatistics.SampleSet.2.Parameter')
     template = template.replace('@{OAM_Macro}#', res)
