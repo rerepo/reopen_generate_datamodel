@@ -1064,6 +1064,13 @@ def build_kpi_macro(project, node, uri):
             for i in range(1, space_len):
                 res += ' '
             res += '"' + sname + '"\n'
+            macro = project.upper() + '_' + value.upper().replace('.', '_') + '_ENABLE'
+            sname = uri + '.' + 'Enable'
+            res += '#define ' + macro + ' '
+            space_len = 150 - len(macro)
+            for i in range(1, space_len):
+                res += ' '
+            res += '"' + sname + '"\n'
     return res
 
 def build_oam_macro(project, node, uri):
