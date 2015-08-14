@@ -955,8 +955,8 @@ def computeMaxNum(node, name):
                 return value
     return '32'
 
-def build_oam_para_struct(project, node, uri, indent, num=0):
-    res = ''
+def find_sm(project, node):
+    rt=0
     support=''
     if project == 'lte':
         support='F'
@@ -965,24 +965,49 @@ def build_oam_para_struct(project, node, uri, indent, num=0):
     for child in node.childNodes:
         if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
+        saveType = child.getAttribute('SaveType')
+        if saveType == 'SM' or saveType == 'HM':
+            rt=1
+            break
+    return rt
+
+def build_oam_para_struct(project, node, uri, indent, num=0):
+    res=''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
+    
+    for child in node.childNodes:
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
+            continue
         name = child.getAttribute('Name')
         paraType = child.getAttribute('Type')
+
         if paraType == 'object':
 
             # For multi object '0' node is used as template to generator struct code,
             # other instance list like '1', '2' ... , will be ignored
-
             if name == '0':
                 res += build_oam_para_struct(project, child, uri + '.' + name, indent, num)
                 break
 
             res += add_indent(indent, num) + 'struct '
-            #res += get_macro_by_uri(uri + '.' + child.getAttribute('Name')) + ' {\n'
-            #res += (uri + '.' + name).replace('.', '_').replace('Device_Services_', '')
             res += get_oam_macro_by_uri(uri + '.' + name).replace('(x)', '')
             res += ' {\n'
          
-
+            # add __dirty and __par into struct
+            if child.childNodes[0].getAttribute('Name') == '0':
+                sm = find_sm(project, child.childNodes[0])
+            else:
+                sm = find_sm(project, child)
+            if sm == 1:
+                res += add_indent(indent, num + 1)
+                res += 'int             __dirty;\n'
+                res += add_indent(indent, num + 1)
+                res += 'void*           __par;\n' 
+            
             res += build_oam_para_struct(project, child, uri + '.' + name, indent, num + 1)
             res += add_indent(indent, num)
             if child.childNodes[0].getAttribute('Name') == '0':
@@ -1018,8 +1043,6 @@ def build_oam_struct_typedef(project, node, uri):
         if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
             continue
         name = child.getAttribute('Name')
-        #if child.getAttribute('Name') == '0' :
-        #    break
         if child.getAttribute('Type') == 'object':
             if name == '0':
                 res += build_oam_struct_typedef(project, child, uri + '.' + name)
@@ -1090,7 +1113,6 @@ def build_oam_macro(project, node, uri):
             res += build_oam_macro(project, child, uri + '.' + name)
             continue
 
-
         macro = get_oam_macro_by_uri(uri + '.' + name)
         res += '#define ' + macro + ' '
         space_len = 150 - len(macro)
@@ -1111,6 +1133,31 @@ def build_oam_macro(project, node, uri):
             else:
                 macro += '.' + i
         res += '(' + macro[1:].replace('Device', '') + ')\n'
+        
+        # add PARENT macro
+        saveType = child.getAttribute('SaveType')
+        type = child.getAttribute('Type') 
+        if (saveType == 'SM' or saveType == 'HM') and not type == 'object':
+            par_macro = get_oam_macro_by_uri(uri + '.' + name)
+            res += '#define PARENT_' + par_macro + ' '
+            space_len = 150 - len(par_macro)
+            for i in range(1, space_len):
+                res += ' '
+               
+            par_macro = ''
+            num = 0
+            arr = uri.split('.')        
+            if arr[0] == 'Device':
+                del arr[0]
+            if arr[0] == 'Services':
+                del arr[0]
+            for i in arr:
+                if i == '0':
+                    par_macro += '[(' + key[num] +')-1]'
+                    num += 1
+                else:
+                    par_macro += '.' + i
+            res += '(' + par_macro[1:].replace('Device', '') + ')\n'
 
         if child.getAttribute('Type') == 'object':
             if name == '0':
@@ -1230,9 +1277,259 @@ def build_oam_dm_init(project, node, uri, depth = 0):
                 get_oam_macro_by_uri(uri + '.' + name) + ');\n\n'
 
 
-    return res
-            
+    return res 
+ 
+def get_oam_macro_by_uri1(uri):
+    num = 0
+    res = ''
+    arr = uri.split('.')
+    for i in arr:
+        if i == '0':
+            num += 1
+    macro = '_'.join(arr)
+    res = macro.replace('_0', '').replace('Device_Services_', '')
+    v = 'i,j,k'
+    if num > 0:
+        res += '(' + v[0:num*2-1] + ')'
+    return res 
 
+# ftl_oam_sm_init(void)
+def build_oam_sm_init(project, node, uri, pre_macro_name = 'FAPService', depth = 0):
+    inner_loop = chr(ord('i') + depth)
+    res=''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
+    for child in node.childNodes:
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
+            continue
+            
+        name = child.getAttribute('Name')
+        paraType = child.getAttribute('Type')
+        saveType = child.getAttribute('SaveType')
+        macro_name = get_oam_macro_by_uri1(uri + '.' + name)
+        child_is_have_sm = find_sm(project, child)
+
+        if paraType == 'object':
+            # For multi object '0' node is used as template to generator struct code,
+            # other instance list like '1', '2' ... , will be ignored
+            # to build multi object
+            sm = find_sm(project, child.childNodes[0])
+            if (child.childNodes[0].getAttribute('Name') == '0'): 
+                if not sm == 1:
+                    continue
+
+                #if not pre_macro_name == 'NULL':
+                tmp_pre_macro_name = '(void *)&' + pre_macro_name
+                    
+                maxNum = macroExpand(getMaxNumNodeOamMacro(node, uri, name), depth)
+                if len(maxNum) == 0:
+                    maxNum = '32'
+                    
+                res += '    for (' + inner_loop + ' = 1; ' + inner_loop + ' <= ' + maxNum + '; ' + inner_loop + '++)\n'
+                res += '    {\n'
+                res += '        ' + macro_name + '(' + inner_loop + ').__par = ' + tmp_pre_macro_name + ';\n'
+                res += build_oam_sm_init(project, child, uri + '.' + name, macro_name + '(' + inner_loop + ')', depth + 1)
+                res += '    }\n'
+                continue
+            
+            
+            if name == '0':
+                res += build_oam_sm_init(project, child, uri + '.' + name, pre_macro_name, depth)
+                break
+                
+            if child_is_have_sm == 1:
+                res += '    ' + macro_name
+                #if pre_macro_name == 'NULL':
+                #    res += '.__par = NULL;\n'
+                #else:
+                res += '.__par = (void *)&' + pre_macro_name + ";\n"
+            else:
+                macro_name = pre_macro_name
+            
+            res += build_oam_sm_init(project, child, uri + '.' + name, macro_name, depth)
+            if child_is_have_sm == 1:
+                res += '\n'       
+
+    return res
+
+def get_zero_num_by_uri(uri):
+    arr = uri.split('.')
+    index = ['i', 'j', 'k', 'l', 'm', 'n']
+    
+    num = 0
+    for i in range(0, len(arr) - 1):
+        if arr[i] == '0':
+            num += 1
+    
+    return num
+    
+# build_oam_sm_update_req_handle(void)
+def build_oam_sm_update_req_handle(project, node, uri, depth = 0, indent_depth=1):
+    inner_loop = chr(ord('i') + depth)
+    res=''
+    support=''
+    if project == 'lte':
+        support='F'
+    if project == 'tds':
+        support='T'
+    for child in node.childNodes:
+        if not child.getAttribute('Support') == support and not child.getAttribute('Support') == 'C':
+            continue
+        name = child.getAttribute('Name')
+        paraType = child.getAttribute('Type')
+        saveType = child.getAttribute('SaveType')
+        macro_name = get_oam_macro_by_uri1(uri + '.' + name)
+        path = uri + '.' + name
+
+        if paraType == 'object':
+            # For multi object '0' node is used as template to generator struct code,
+            # other instance list like '1', '2' ... , will be ignored
+            # to build multi object 
+            if (child.childNodes[0].getAttribute('Name') == '0'): 
+                is_have_sm = find_sm(project, child.childNodes[0])
+                if not is_have_sm == 1:
+                    continue
+                
+                if saveType == 'SM' or saveType == 'HM':
+                    maxNum = macroExpand(getMaxNumNodeOamMacro(node, uri, name))
+                    if len(maxNum) == 0:
+                        maxNum = '32'
+                    EntryNumMacro = macroExpand(getNumberEntryNodeOamMacro(node, uri, name))
+                    EntrySnameMacro = macroExpand(getNumberEntryNodeSnameMacro(node, uri, name))
+
+                    # Before copy data to CML, we need check the instance number
+                    # if the instance number is more , we need do ftl_addObj
+                    # else do ftl_delObj
+                    #
+                    if EntrySnameMacro.find('_i_') >= 0:
+                        res += add_indent('    ', indent_depth)
+                        res += '    sprintf(sname,' + EntrySnameMacro + ', i);\n'
+                        res += add_indent('    ', indent_depth)
+                        res += '    ftl_getNodeValue(sname, buf);\n'
+                    else:
+                        res += add_indent('    ', indent_depth)
+                        res += '    ftl_getNodeValue(' + EntrySnameMacro + ', buf);\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '    if (' + EntryNumMacro + ' > atoi(buf))\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '    {\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '        for (j = atoi(buf)+1; j <= ' + EntryNumMacro + '; j++)\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '        {\n'
+                
+                    if EntrySnameMacro.find('_i_') >= 0:
+                        res += add_indent('    ', indent_depth)
+                        res += '            sprintf(sname, ' + macroExpand(get_macro_by_uri(path)) + '_Table, i);\n'
+                        res += add_indent('    ', indent_depth)
+                        res += '            ftl_addObj(sname , j);\n'
+                    else:
+                        res += add_indent('    ', indent_depth)
+                        res += '            ftl_addObj(' + macroExpand(get_macro_by_uri(path)) + '_Table, j);\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '        }\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '    }\n'
+                
+                    res += add_indent('    ', indent_depth)
+                    res += '    else if (' + EntryNumMacro + ' < atoi(buf))\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '    {\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '        for (j = ' + EntryNumMacro + '+1; j <= atoi(buf); j++)\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '        {\n'
+                    if EntrySnameMacro.find('_i_') >= 0:
+                        res += add_indent('    ', indent_depth)
+                        res += '            sprintf(sname, ' + macroExpand(get_macro_by_uri(path)) + '_Table, i);\n'
+                        res += add_indent('    ', indent_depth)
+                        res += '            ftl_delObj(sname , j);\n'
+                    else:
+                        res += add_indent('    ', indent_depth)
+                        res += '            ftl_delObj(' + macroExpand(get_macro_by_uri(path)) + '_Table, j);\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '        }\n'
+                    res += add_indent('    ', indent_depth)
+                    res += '    }\n\n'
+                
+                # Set NumberOfEntries                
+                maxNum = macroExpand(getMaxNumNodeOamMacro(node, uri, name), depth)
+                if len(maxNum) == 0:
+                    maxNum = '32'
+                
+                res += add_indent('    ', indent_depth)
+                res += '    for (' + inner_loop + ' = 1; ' + inner_loop + ' <= ' + maxNum + '; ' + inner_loop + '++)\n'
+                res += add_indent('    ', indent_depth)
+                res += '    {\n'
+                res += add_indent('    ', indent_depth)
+                res += '        if (' + macro_name + '(' + inner_loop + ').__dirty == 1' + ")\n"
+                res += add_indent('    ', indent_depth)
+                res += '        {\n'
+                res += build_oam_sm_update_req_handle(project, child, uri + '.' + name, depth + 1, indent_depth + 1)
+                res += add_indent('    ', indent_depth)
+                res += '        }\n'
+                res += add_indent('    ', indent_depth)
+                res += '    }\n\n'
+                continue
+                
+            child_is_have_sm = find_sm(project, child)    
+            if name == '0':
+                res += build_oam_sm_update_req_handle(project, child, uri + '.' + name, depth, indent_depth)
+                indent_depth -= 1
+                break
+
+            
+            if child_is_have_sm == 1:
+                res += add_indent('    ', indent_depth)
+                res += '    if (' + macro_name + '.__dirty == 1 )\n'
+                res += add_indent('    ', indent_depth)
+                res += '    {\n'
+                indent_depth += 1
+            
+            res += build_oam_sm_update_req_handle(project, child, uri + '.' + name, depth,indent_depth)
+            if child_is_have_sm == 1:
+                res += add_indent('    ', indent_depth)
+                res += '}\n\n'
+                indent_depth -= 1
+        else:
+            if saveType == 'SM' or saveType == 'HM':
+                if path.find('.0.') >= 0:
+                    res += add_indent('    ', indent_depth)
+                    res += '        sprintf(sname, ' + get_macro_by_uri(path)
+                    zero_num = get_zero_num_by_uri(path)
+                    for v in "ijk"[0:zero_num]:
+                        res += ', ' + v
+                    res += ');\n'
+                    
+                    if paraType.find('int') >= 0 or paraType.find('unsigned') >= 0 or paraType.find('boolean') >= 0:
+                        res += add_indent('    ', indent_depth)
+                        res += '        sprintf(value, "%d", ' + macroExpand(get_oam_macro_by_uri(path)) + ');\n'
+                        res += add_indent('    ', indent_depth)
+                        res += '        ftl_setValue(sname, value);\n'
+                    else:
+                        res += add_indent('    ', indent_depth)
+                        res += '        ftl_setValue(sname, ' + macroExpand(get_oam_macro_by_uri(path)) + ');\n'
+                    if saveType == 'HM':
+                        res += add_indent('    ', indent_depth)
+                        res += '        commit_flag = 1;\n'
+                else:
+                    # for parameter thar not in Multi Object
+                    if paraType.find('int') >= 0 or paraType.find('unsigned') >= 0 or paraType.find('boolean') >= 0:
+                        res += add_indent('    ', indent_depth)
+                        res += '    sprintf(value, "%d", ' + macroExpand(get_oam_macro_by_uri(path)) + ');\n'
+                        res += add_indent('    ', indent_depth)
+                        res += '    ftl_setValue(' + macroExpand(get_macro_by_uri(path)) + ', value);\n'
+                    else:
+                        res += add_indent('    ', indent_depth)
+                        res += '    ftl_setValue(' + macroExpand(get_macro_by_uri(path)) + ', ' + macroExpand(get_oam_macro_by_uri(path)) + ');\n'
+                    if saveType == 'HM':
+                        res += add_indent('    ', indent_depth)
+                        res += '    commit_flag = 1;\n'
+    return res
+    
 def getNumberEntryNodeSnameMacro(node, uri, name):
     for child in node.childNodes:
         childName = child.getAttribute('Name')

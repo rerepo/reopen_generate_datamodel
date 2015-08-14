@@ -17,7 +17,9 @@
 struct FAPService_ FAPService;
 static int inited = 0;
 static pthread_rwlock_t rwlock;
-
+int slow_flag = 0;
+int quick_flag = 0;
+int commit_flag = 0;
 
 void ftl_oam_get_xmlversion(char *buffer)
 {
@@ -43,7 +45,12 @@ int ftl_oam_dm_init(void)
 
     /* Init data here */
 @{ftl_oam_dm_init}#
-    inited = 1;
+
+    FAPService.__par = NULL;
+    
+@{ftl_oam_sm_init}#
+
+	inited = 1;
 
     return 0;
 }
@@ -72,6 +79,20 @@ void ftl_oam_pm_update_req_handler(void)
     /* update pm parameter */
 }
 
+void ftl_oam_sm_update_req_handler(void)
+{
+    int i=0, j=0;
+    char sname[512], buf[64];
+    char value[64];
+
+    /* update sm parameter */
+    if (FAPService.__dirty == 1)
+    {
+@{ftl_oam_sm_update_req_handler}#        
+    }
+
+}
+
 ftl_oam_rst_t ftl_oam_get(ftl_oam_id_t id, int idlen, void *buf, OAM_U32 *len)
 {
     int len2copy;
@@ -95,31 +116,6 @@ ftl_oam_rst_t ftl_oam_get(ftl_oam_id_t id, int idlen, void *buf, OAM_U32 *len)
     memcpy(buf, id, len2copy);
     pthread_rwlock_unlock(&rwlock);
     *len = len2copy;
-
-    return w_flag ? FTL_OAM_RST_LEN_NOT_MATCH : FTL_OAM_RST_SUCCESS;
-}
-
-
-ftl_oam_rst_t ftl_oam_set(ftl_oam_id_t id, int idlen, void *buf, OAM_U32 len)
-{
-    int len2copy = idlen < len ? idlen : len;
-    int w_flag = 0;
-
-    if(!inited) {
-        return FTL_OAM_RST_FAILURE;
-    }
-
-    if(buf == NULL) {
-        return FTL_OAM_RST_FAILURE;
-    }
-
-    if(idlen != len)
-        w_flag = 1;
-
-    pthread_rwlock_wrlock(&rwlock);
-    memset(id, 0, idlen);/*XXX*/
-    memcpy(id, buf, len2copy);
-    pthread_rwlock_unlock(&rwlock);
 
     return w_flag ? FTL_OAM_RST_LEN_NOT_MATCH : FTL_OAM_RST_SUCCESS;
 }

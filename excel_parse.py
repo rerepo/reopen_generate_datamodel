@@ -62,7 +62,7 @@ class excel_reader:
     def parse_default(self, para, name):
         if len(para[name]) != 0:
             if para[name][0] == '\"' and para[name][-1] == '\"':
-                para[name] = para[name][1:-2]
+                para[name] = para[name][1:-1]
 
             if para[name].find('Empty') > 0:
                 para[name] = ''
